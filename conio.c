@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include <ctype.h>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
@@ -66,6 +67,8 @@ size_t m_scale = 5;
 SDL_Point m_cursor = {0, 0};
 
 // private functions
+bool valid_cursor(int x, int y);
+
 void initcolors(void);
 
 void initmatrix(void);
@@ -186,8 +189,9 @@ int refresh(void) {
             foreign = m_color_matrix[y][x].foreign;
             background = m_color_matrix[y][x].background;
 
-            if(chr != ' '){
-                SDL_FRect _rect = {rect.x, rect.y, 15, 25};
+            //if(chr != ' ')
+            {
+                SDL_FRect _rect = {rect.x, rect.y, 25, 25};
                 SDL_SetRenderDrawColor(m_renderer, background.r, background.g, background.b, background.a);
                 SDL_RenderFillRectF(m_renderer, &_rect);
             }
@@ -215,9 +219,8 @@ int refresh(void) {
                     key_id_pressed = '\n';
                 }
             } else {
-
+                key_id_pressed = tolower(m_buff_chr[0]);
             }
-
         } else {
             key_id_pressed = 0;
         }
@@ -249,7 +252,7 @@ void clrscr(void) {
     size_t i;
 
     for (i = 0; i < m_shape_matrix.y; i++) {
-        memset(m_chr_matrix[i], ' ', m_shape_matrix.y);
+        memset(m_chr_matrix[i], ' ', m_shape_matrix.x);
     }
 
     clreol();
@@ -268,6 +271,7 @@ void movetext(int left, int top, int right, int bottom, int destleft, int destto
 void gotoxy(int x, int y) {
     m_cursor.x = x;
     m_cursor.y = y;
+
     m_color_matrix[y][x].foreign = m_foreign;
     m_color_matrix[y][x].background = m_background;
 }
@@ -276,6 +280,10 @@ void cputsxy(int x, int y, char *str) {
     const size_t length = strlen(str);
     const size_t from = x;
     size_t i;
+
+    if(!valid_cursor(x, y)) {
+        return;
+    }
 
     gotoxy(x, y);
     char *row = m_chr_matrix[wherey()];
@@ -287,6 +295,10 @@ void cputsxy(int x, int y, char *str) {
 }
 
 void putchxy(int x, int y, char ch) {
+    if(!valid_cursor(x, y)) {
+        return;
+    }
+
     gotoxy(x, y);
     char *row = m_chr_matrix[wherey()];
 
@@ -336,12 +348,13 @@ void flashbackground(int color, int ms);
 void clearkeybuf(void);
 
 int kbhit(void) {
+    // return key_id_pressed != 0;
     return m_buff_chr[0] != '\0';
     // return strlen(m_buff_chr) == 0;
 }
 
 int getch(void) {
-    return key_id_pressed;
+    return tolower(m_buff_chr[0]);
 }
 
 void initmatrix(void) {
@@ -353,6 +366,16 @@ void initmatrix(void) {
         m_chr_matrix[i] = calloc(m_shape_matrix.x, sizeof(char));
         memset(m_chr_matrix[i], ' ', m_shape_matrix.x);
     }
+}
+
+bool valid_cursor(int x, int y) {
+    bool valid = !((x < 0 || x > m_shape_matrix.x) || (y < 0 || y > m_shape_matrix.y));
+
+    if(!valid) {
+        SDL_SetError("Invalid cursor position [%i, %i]", x, y);
+    }
+
+    return valid;
 }
 
 void initcolors(void) {

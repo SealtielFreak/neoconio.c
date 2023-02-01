@@ -7,6 +7,8 @@
 #define RES_FONT         "../assets/ModernDOS8x16.ttf"
 
 int main() {
+    int x , y;
+
     initconio(0);
 
     if(auto status = !loadfont(RES_FONT); status) {
@@ -20,9 +22,33 @@ int main() {
 
         if(kbhit()) {
             char chr = getch();
+            printf("%i %i\n", x, y);
             printf("%c %u\n", chr, chr);
+
+            switch (chr) {
+                case 'w': {
+                    y -= 1;
+                    break;
+                }
+                case 's': {
+                    y += 1;
+                    break;
+                }
+                case 'a': {
+                    x -= 1;
+                    break;
+                }
+                case 'd': {
+                    x += 1;
+                    break;
+                }
+            }
+
             continue;
         }
+
+
+        putchxy(x, y, '0');
 
         textcolor(BLUE);
         putchxy(0, 0, '*');
